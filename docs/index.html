@@ -1,0 +1,55 @@
+<!doctype>
+<html>
+<head>
+  <title>Thermite Presentation</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono|Roboto+Slab" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      text-align: center;
+      background-color: #011b16;
+      color: white;
+      font-size: 2em;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Roboto Slab', serif;
+    }
+
+    code {
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    a, a:visited, a:active {
+      color: white;
+      text-decoration: none;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 5px;
+      margin: 0 2px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    a:hover {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="container" class="container">
+    <script src="../node_modules/react/dist/react.js"></script>
+    <script src="../node_modules/react-dom/dist/react-dom.js"></script>
+    <script type="text/javascript">
+      function require(name) {
+        if (name === 'react') {
+          return window.React;
+        } else if (name === 'react-dom') {
+          return window.ReactDOM;
+        }
+      }
+    </script>
+    <script src="index.js"></script>
+  </div>
+</body>
+</html>
