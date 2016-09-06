@@ -4,35 +4,79 @@
   <title>Thermite Presentation</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed|Roboto+Mono|Roboto+Slab" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono|Roboto+Slab" rel="stylesheet">
   <style>
     body {
-      font-family: 'Roboto Condensed', sans-serif;
-      text-align: center;
-      background-color: #011b16;
+      font-family: 'Roboto Slab', serif;
       color: white;
       font-size: 2em;
+      background: #011b16;
+      background: linear-gradient(0deg, #000500 0%,#011b16 50%,#011b16 100%);
     }
 
-    h1, h2, h3 {
-      font-family: 'Roboto Slab', serif;
+    #container {
+      width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1, h2, h3, nav {
+      text-align: center;
     }
 
     code {
       font-family: 'Roboto Mono', monospace;
     }
 
+    pre {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px;
+      overflow-x: hidden;
+      font-size: 0.8em;
+    }
+
     a, a:visited, a:active {
       color: white;
       text-decoration: none;
       background-color: rgba(255, 255, 255, 0.1);
-      padding: 5px;
+      padding: 5px 10px;
       margin: 0 2px;
-      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 10px;
     }
 
     a:hover {
       background-color: rgba(255, 255, 255, 0.25);
+    }
+
+    button {
+      font-family: 'Roboto';
+      font-size: 1em;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 15px 10px;
+      color: white;
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      display: block;
+      text-align: center;
+      cursor: hand;
+    }
+
+    .buttonLeft {
+      width: 50%;
+      float: left;
+      border-radius: 10px 0 0 10px;
+    }
+
+    .buttonRight {
+      width: 50%;
+      float: right;
+      border-radius: 0 10px 10px 0;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .clearBoth {
+      clear: both;
     }
   </style>
 </head>
