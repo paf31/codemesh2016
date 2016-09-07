@@ -202,7 +202,7 @@ data CounterAction = Increment
 
 counter = T.simpleSpec performAction render where
   render dispatch _ count _ =
-    [ button [ onClick \_ -> dispatch Increment ]
+    [ button [ onClick \_ → dispatch Increment ]
              [ text (show count) ]
     ]
 

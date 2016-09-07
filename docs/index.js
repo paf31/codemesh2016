@@ -2565,7 +2565,7 @@ var PS = {};
                               return [ React_DOM["h1'"]([ React_DOM.text("Simple Components") ]), React_DOM["pre'"]([ React_DOM["code'"]([ React_DOM.text("simpleSpec\n  \u2237 \u2200 eff state props action\n  . PerformAction eff state props action\n  \u2192 Render state props action\n  \u2192 Spec eff state props action") ]) ]) ];
                           };
                           if (slide instanceof S6) {
-                              return [ React_DOM["h1'"]([ React_DOM.text("Counter Component") ]), React_DOM["pre'"]([ React_DOM["code'"]([ React_DOM.text("type CounterState = Int\ndata CounterAction = Increment\n\ncounter = T.simpleSpec performAction render where\n  render dispatch _ count _ =\n    [ button [ onClick \\_ -> dispatch Increment ]\n             [ text (show count) ]\n    ]\n\n  performAction Increment _ _ = void $ T.cotransform (_ + 1)") ]) ]), React_DOM["p'"]([ React_DOM.button([ React_DOM_Props.onClick(function (v2) {
+                              return [ React_DOM["h1'"]([ React_DOM.text("Counter Component") ]), React_DOM["pre'"]([ React_DOM["code'"]([ React_DOM.text("type CounterState = Int\ndata CounterAction = Increment\n\ncounter = T.simpleSpec performAction render where\n  render dispatch _ count _ =\n    [ button [ onClick \\_ \u2192 dispatch Increment ]\n             [ text (show count) ]\n    ]\n\n  performAction Increment _ _ = void $ T.cotransform (_ + 1)") ]) ]), React_DOM["p'"]([ React_DOM.button([ React_DOM_Props.onClick(function (v2) {
                                   return dispatch(Increment.value);
                               }) ])([ React_DOM.text(Data_Show.show(Data_Show.showInt)(slide.value0)) ]) ]) ];
                           };
