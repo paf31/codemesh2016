@@ -19,12 +19,13 @@ import Data.Either (Either(..))
 import Data.Foldable (fold)
 import Data.Int (floor)
 import Data.Lens (Prism', Lens, _1, _2, _Left, _Right, only, over, set, prism, lens)
+import Data.List (List, fromFoldable)
 import Data.Maybe (fromJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Nullable (toMaybe)
 import Data.String (length, joinWith)
 import Data.Time.Duration (Seconds, convertDuration)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (fst, Tuple(..))
 import Partial.Unsafe (unsafePartial)
 
 type SharedState =
@@ -32,6 +33,7 @@ type SharedState =
   , counter2 :: Int
   , counter3 :: Int
   , counter4 :: Int
+  , counterList :: List Int
   }
 
 type SlidesState =
@@ -57,6 +59,9 @@ counter3 = lens _.counter3 (_ { counter3 = _ })
 counter4 :: forall a b r. Lens { counter4 :: a | r } { counter4 :: b | r } a b
 counter4 = lens _.counter4 (_ { counter4 = _ })
 
+counterList :: forall a b r. Lens { counterList :: a | r } { counterList :: b | r } a b
+counterList = lens _.counterList (_ { counterList = _ })
+
 slideNumberIs :: Int -> Prism' SlidesState SharedState
 slideNumberIs n =
   prism { slideNumber: n, sharedState: _ }
@@ -73,6 +78,7 @@ initialState =
     , counter2: 0
     , counter3: 0
     , counter4: 0
+    , counterList: fromFoldable [1, 2, 3]
     }
   }
 
@@ -85,6 +91,7 @@ data SlidesAction
   | Increment2
   | Increment3
   | Increment4
+  | IncrementN Int
 
 derive instance eqSlidesAction :: Eq SlidesAction
 
@@ -99,6 +106,12 @@ increment3 = only Increment3
 
 increment4 :: Prism' SlidesAction Unit
 increment4 = only Increment4
+
+incrementN :: Prism' SlidesAction (Tuple Int Unit)
+incrementN = prism (IncrementN <<< fst)
+               case _ of
+                 IncrementN n -> Right (Tuple n unit)
+                 other -> Left other
 
 first :: SlidesState -> SlidesState
 first = set slideNumber 0
@@ -227,8 +240,8 @@ slide4 = intro <> T.focus counter1 increment1 counter
       , "data CounterAction = Increment"
       , ""
       , "counter = T.simpleSpec performAction render where"
-      , "  render dispatch _ count _ ="
-      , "    [ button [ onClick \\_ → dispatch Increment ]"
+      , "  render send _ count _ ="
+      , "    [ button [ onClick \\_ → send Increment ]"
       , "             [ text (show count) ]"
       , "    ]"
       , ""
@@ -251,9 +264,9 @@ slide6 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide6 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
   [ RD.h1'  [ RD.text "Composition in Thermite" ]
   , RD.p'   [ RD.text "Preview:" ]
-  , RD.ul' [ RD.li' [ RD.text "State: record types" ]
+  , RD.ul' [ RD.li' [ RD.text "State: record types and lists" ]
            , RD.li' [ RD.text "Action: sum types" ]
-           , RD.li' [ RD.text "Render/Update: lenses and prisms" ]
+           , RD.li' [ RD.text "Render/Update: lenses, prisms and traversals" ]
            ]
   , RD.p'   [ RD.text "These slides are composed from several small components" ]
   , RD.p'   [ RD.text "(check the source!)" ]
@@ -278,21 +291,51 @@ slide7 = intro <> counters <> outro
 
 slide8 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide8 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Two Counters" ]
-  , RD.p'   [ RD.text "State:" ]
-  , RD.pre' [ RD.code' [ RD.text "Tuple CounterState CounterState" ] ]
-  , RD.p'   [ RD.text "Actions:" ]
-  , RD.pre' [ RD.code' [ RD.text "Either CounterAction CounterAction" ] ]
-  , RD.p'   [ RD.text "We can talk about the parts using lenses and prisms" ]
-  ]
+    [ RD.h1'  [ RD.text "Two Counters" ]
+    , RD.p'   [ RD.text "The state type for two counters is" ]
+    , RD.pre' [ RD.code' [ RD.text "Tuple CounterState CounterState" ] ]
+    , RD.p'   [ RD.text "i.e. one "
+              , RD.code' [ RD.text "CounterState" ]
+              , RD.text " for each counter"
+              ]
+    , RD.p'   [ RD.text "We can access the parts using lenses:" ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "_1     :: Lens' (Tuple a b) a"
+      , "_2     :: Lens' (Tuple a b) b"
+      ]
 
 slide9 :: forall eff props. T.Spec eff SharedState props SlidesAction
-slide9 = intro <> counters
+slide9 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+    [ RD.h1'  [ RD.text "Two Counters" ]
+    , RD.p'   [ RD.text "The corresponding action type is" ]
+    , RD.pre' [ RD.code' [ RD.text "Either CounterAction CounterAction" ] ]
+    , RD.p'   [ RD.text "i.e. we can either" ]
+    , RD.ul'  [ RD.li' [ RD.text "Update the "
+                       , RD.code' [ RD.text "Left" ]
+                       , RD.text " counter, or"
+                       ]
+              , RD.li' [ RD.text "update the "
+                       , RD.code' [ RD.text "Right" ]
+                       , RD.text " counter"
+                       ]
+              ]
+    , RD.p'   [ RD.text "We can handle the parts using prisms:" ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "_Left  :: Prism' (Either a b) a"
+      , "_Right :: Prism' (Either a b) b"
+      ]
+
+slide10 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide10 = intro <> counters <> outro
   where
     intro = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
       [ RD.h1'  [ RD.text "Focusing" ]
-      , RD.p'   [ RD.text "Instead, we use a Lens to focus on a smaller part of the state, and a Prism to match a subset of the actions." ]
-      , RD.pre' [ RD.code' [ RD.text example ] ]
       , RD.p'   [ RD.text "Our component becomes:" ]
       , RD.pre' [ RD.code' [ RD.text "focus _1 _Left counter <> focus _2 _Right counter" ] ]
       ]
@@ -300,75 +343,148 @@ slide9 = intro <> counters
     counters = T.focus counter3 increment3 counter
             <> T.focus counter4 increment4 counter
 
-    example = joinWith "\n"
-      [ "_1     :: Lens' (Tuple a b) a"
-      , "_2     :: Lens' (Tuple a b) b"
-      , "_Left  :: Prism' (Either a b) a"
-      , "_Right :: Prism' (Either a b) b"
+    outro = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+      [ RD.p'   [ RD.text "Note:" ]
+      , RD.ul'  [ RD.li' [ RD.text "Lenses and prisms can be derived in most cases" ]
+                , RD.li' [ RD.text "PureScript can infer the correct lenses and prisms in some cases" ]
+                ]
       ]
 
--- slide10 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide10 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---     [ RD.h1'  [ RD.text "Tab Components" ]
---     , RD.p'   [ RD.text "Lenses let us identify smaller parts of a product of types, which is a good model for independent components." ]
---     , RD.p'   [ RD.text "Prisms let us identify smaller parts of a sum of types, which is a good model for tabbed applications:" ]
---     , RD.pre' [ RD.code' [ RD.text example ] ]
---     , RD.p'   [ RD.text "Note that" ]
---     , RD.ul' [ RD.li' [ RD.text "The action type δ does not change here" ]
---              , RD.li' [ RD.text "No information is shared between tabs" ]
---              ]
---     ]
---   where
---     example = """split
---   ∷ ∀ eff σ₁ σ₂ δ
---   . PrismP σ₁ σ₂
---   → Spec eff σ₂ δ
---   → Spec eff σ₁ δ"""
---
--- slide11 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide11 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---     [ RD.h1'  [ RD.text "List Components" ]
---     , RD.p'   [ RD.text "The last type of composition lets us define lists of subcomponents:" ]
---     , RD.pre' [ RD.code' [ RD.text example ] ]
---     , RD.p'   [ RD.text "In OpticUI, this is generalized to a Traversal." ]
---     , RD.p'   [ RD.text "Note that" ]
---     , RD.ul'  [ RD.li' [ RD.text "We have a whole list of states, one for each list element" ]
---               , RD.li' [ RD.text "The action type now includes the index of the component to update" ]
---               ]
---     ]
---   where
---     example = """foreach
---   ∷ ∀ eff σ δ
---   . (Int -> Spec eff σ δ)
---   → Spec eff (List σ) (Tuple Int δ)"""
---
--- slide12 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide12 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Summary" ]
---   , RD.table' [ RD.thead' [ RD.th' [ RD.text "Component" ]
---                            , RD.th' [ RD.text "Function" ]
---                            , RD.th' [ RD.text "Optic" ]
---                            ]
---                , RD.tbody' [ RD.tr' [ RD.td' [ RD.text "Pair (same state)" ]
---                                     , RD.td' [ RD.pre' [ RD.code' [ RD.text "(<>)" ] ] ]
---                                     , RD.td' [ RD.text "" ]
---                                     ]
---                            , RD.tr' [ RD.td' [ RD.text "Pair (independent)" ]
---                                     , RD.td' [ RD.pre' [ RD.code' [ RD.text "focus" ] ] ]
---                                     , RD.td' [ RD.text "Lens" ]
---                                     ]
---                            , RD.tr' [ RD.td' [ RD.text "Tabs" ]
---                                     , RD.td' [ RD.pre' [ RD.code' [ RD.text "split" ] ] ]
---                                     , RD.td' [ RD.text "Prism" ]
---                                     ]
---                            , RD.tr' [ RD.td' [ RD.text "Lists" ]
---                                     , RD.td' [ RD.pre' [ RD.code' [ RD.text "foreach" ] ] ]
---                                     , RD.td' [ RD.text "Traversal" ]
---                                     ]
---                            ]
---                ]
---   ]
---
+slide11 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide11 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Many Counters" ]
+  , RD.p'   [ RD.text "If we have many counters, the state type becomes" ]
+  , RD.pre' [ RD.code' [ RD.text "List CounterState" ] ]
+  , RD.p'   [ RD.text "and the action type becomes" ]
+  , RD.pre' [ RD.code' [ RD.text "Tuple Int CounterAction" ] ]
+  , RD.p'   [ RD.text "Note: The action type now includes the index of the component to update" ]
+  , RD.p'   [ RD.text "In OpticUI, this is generalized to an (indexed) Traversal of states." ]
+  ]
+
+slide12 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide12 = intro <> counters <> outro
+  where
+    intro = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+      [ RD.h1'  [ RD.text "Many Counters" ]
+      , RD.p'   [ RD.text "Our component becomes:" ]
+      , RD.pre' [ RD.code' [ RD.text "foreach \\_ -> counter" ] ]
+      ]
+
+    counters = T.focus counterList incrementN (T.foreach \_ -> counter)
+
+    outro = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+      [ RD.p' [ RD.text "See the todo list example for a more involved example" ]
+      ]
+
+slide13 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide13 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1' [ RD.text "Summary" ]
+  , RD.table' [ RD.thead' [ RD.th' [ RD.text "Component" ]
+                           , RD.th' [ RD.text "Function" ]
+                           , RD.th' [ RD.text "Optic" ]
+                           ]
+               , RD.tbody' [ RD.tr' [ RD.td' [ RD.text "Pair (same state)" ]
+                                    , RD.td' [ RD.code' [ RD.text "(<>)" ] ]
+                                    , RD.td' [ RD.text "" ]
+                                    ]
+                           , RD.tr' [ RD.td' [ RD.text "Pair (independent)" ]
+                                    , RD.td' [ RD.code' [ RD.text "focus" ] ]
+                                    , RD.td' [ RD.text "Lens" ]
+                                    ]
+                           , RD.tr' [ RD.td' [ RD.text "Lists" ]
+                                    , RD.td' [ RD.code' [ RD.text "foreach" ] ]
+                                    , RD.td' [ RD.text "Traversal" ]
+                                    ]
+                           ]
+               ]
+  ]
+
+slide14 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide14 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "A Brief History of the API" ]
+  , RD.ul'  [ RD.li' [ RD.text "v0.1: Elm Architecture + React" ]
+            , RD.li' [ RD.text "v???: Monadic Actions" ]
+            , RD.li' [ RD.text "v???: OpticUI" ]
+            ]
+  ]
+
+slide15 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide15 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "OpticUI" ]
+  , RD.p'   [ RD.text "Also React-based, with a lensy API" ]
+  , RD.pre' [ RD.code' [ RD.text "type UI s = (s -> Eff _ Unit) -> s -> HTML" ] ]
+  ]
+
+slide16 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide16 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Profunctor Lenses" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide17 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide17 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide18 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide18 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide19 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide19 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide20 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide20 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide21 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide21 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide22 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide22 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide23 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide23 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide24 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide24 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
+slide25 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide25 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Blah" ]
+  , RD.p'   [ RD.text "blah" ]
+  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  ]
+
 -- slide13 :: forall eff props. T.Spec eff SharedState props SlidesAction
 -- slide13 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
 --   [ RD.h1' [ RD.text "Task List Example" ]
@@ -466,29 +582,34 @@ slide9 = intro <> counters
 --   [ RD.h1' [ RD.text "Questions?" ] ]
 
 slidesComponent :: forall props eff. T.Spec eff SlidesState props SlidesAction
-slidesComponent =
-    fold [ slide 0 slide0
-         , slide 1 slide1
-         , slide 2 slide2
-         , slide 3 slide3
-         , slide 4 slide4
-         , slide 5 slide5
-         , slide 6 slide6
-         , slide 7 slide7
-         , slide 8 slide8
-         , slide 9 slide9
-        --  , slide 10 slide10
-        --  , slide 11 slide11
-        --  , slide 12 slide12
-        --  , slide 13 slide13
-        --  , slide 14 slide14
-        --  , slide 15 slide15
-        --  , slide 16 slide16
-        --  , slide 17 slide17
-        --  , slide 18 slide18
-        --  , slide 19 slide19
-        --  , slide 20 slide20
-         ]
+slidesComponent = fold
+    [ slide 0 slide0
+    , slide 1 slide1
+    , slide 2 slide2
+    , slide 3 slide3
+    , slide 4 slide4
+    , slide 5 slide5
+    , slide 6 slide6
+    , slide 7 slide7
+    , slide 8 slide8
+    , slide 9 slide9
+    , slide 10 slide10
+    , slide 11 slide11
+    , slide 12 slide12
+    , slide 13 slide13
+    , slide 14 slide14
+    , slide 15 slide15
+    , slide 16 slide16
+    , slide 17 slide17
+    , slide 18 slide18
+    , slide 19 slide19
+    , slide 20 slide20
+    , slide 21 slide21
+    , slide 22 slide22
+    , slide 23 slide23
+    , slide 24 slide24
+    , slide 25 slide25
+    ]
   where
     slide n = T.split (slideNumberIs n)
 
