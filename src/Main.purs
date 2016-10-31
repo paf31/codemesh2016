@@ -116,14 +116,17 @@ incrementN = prism (IncrementN <<< fst)
 first :: SlidesState -> SlidesState
 first = set slideNumber 0
 
+numberOfSlides :: Int
+numberOfSlides = 33
+
 next :: SlidesState -> SlidesState
-next = over slideNumber ((_ `mod` 21) <<< add 1)
+next = over slideNumber ((_ `mod` numberOfSlides) <<< add 1)
 
 back :: SlidesState -> SlidesState
-back = over slideNumber ((_ `mod` 21) <<< add 20)
+back = over slideNumber ((_ `mod` numberOfSlides) <<< add (numberOfSlides - 1))
 
 last :: SlidesState -> SlidesState
-last = set slideNumber 20
+last = set slideNumber (numberOfSlides - 1)
 
 counter :: forall eff props. T.Spec eff Int props Unit
 counter = T.simpleSpec performAction render
@@ -170,16 +173,35 @@ navbar = T.simpleSpec performAction render where
 
 slide0 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide0 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1 [ RP.className "center" ]
-          [ RD.text "Front End Development with PureScript and Thermite" ]
-  , RD.p [ RP.className "center" ]
-         [ RD.text "Phil Freeman" ]
-  , RD.p [ RP.className "center" ]
-         [ RD.code' [ RD.text "paf31/codemesh2016" ] ]
+  [ RD.h1' [ RD.text "Front End Development with PureScript and Thermite" ]
+  , RD.p   [ RP.className "center" ]
+           [ RD.text "Phil Freeman" ]
+  , RD.p   [ RP.className "center" ]
+           [ RD.code' [ RD.text "paf31/codemesh2016" ] ]
+  ]
+
+hello :: forall eff props. T.Spec eff SharedState props SlidesAction
+hello = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1' [ RD.text "Hello!" ]
+  , RD.ul' [ RD.li' [ RD.text "Twitter/GitHub: "
+                    , RD.code' [ RD.text "paf31" ]
+                    ]
+           , RD.li' [ RD.text "I write Haskell" ]
+           , RD.li' [ RD.text "I work on PureScript" ]
+           ]
   ]
 
 slide1 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide1 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1' [ RD.text "This Talk" ]
+  , RD.ul' [ RD.li' [ RD.text "Thermite API intro" ]
+           , RD.li' [ RD.text "Techniques discovered" ]
+           , RD.li' [ RD.text "Will assume some Haskell knowledge (e.g. Monad)" ]
+           ]
+  ]
+
+slide2 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide2 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
   [ RD.h1' [ RD.text "Intro" ]
   , RD.p'  [ RD.text "Thermite is a" ]
   , RD.ul' [ RD.li' [ RD.text "small (~200 LOC)" ]
@@ -189,29 +211,6 @@ slide1 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
   , RD.p'  [ RD.text "UI library for PureScript" ]
   , RD.p'  [ RD.text "inspired by Elm, react-blaze and OpticUI" ]
   ]
-
-slide2 :: forall eff props. T.Spec eff SharedState props SlidesAction
-slide2 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1' [ RD.text "This Talk" ]
-  , RD.ul' [ RD.li' [ RD.text "History of the API" ]
-           , RD.li' [ RD.text "Techniques discovered" ]
-           , RD.li' [ RD.text "Examples" ]
-           ]
-  ]
-
--- slide2 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide2 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Problems for UI Libraries" ]
---   , RD.p'  [ RD.text "UI libraries have to solve the following problems:" ]
---   , RD.ul' [ RD.li' [ RD.text "Multiple components" ]
---            , RD.li' [ RD.text "3rd party components" ]
---            , RD.li' [ RD.text "Async code (AJAX etc.)" ]
---            ]
---   , RD.p'  [ RD.text "Thermite uses PureScript's advanced type system features to solve these problems:" ]
---   , RD.ul' [ RD.li' [ RD.text "Lenses" ]
---            , RD.li' [ RD.text "Coroutines" ]
---            ]
---   ]
 
 slide3 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide3 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
@@ -303,8 +302,8 @@ slide8 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
     ]
   where
     example = joinWith "\n"
-      [ "_1     :: Lens' (Tuple a b) a"
-      , "_2     :: Lens' (Tuple a b) b"
+      [ "_1 ∷ Lens' (Tuple a b) a"
+      , "_2 ∷ Lens' (Tuple a b) b"
       ]
 
 slide9 :: forall eff props. T.Spec eff SharedState props SlidesAction
@@ -327,8 +326,8 @@ slide9 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
     ]
   where
     example = joinWith "\n"
-      [ "_Left  :: Prism' (Either a b) a"
-      , "_Right :: Prism' (Either a b) b"
+      [ "_Left  ∷ Prism' (Either a b) a"
+      , "_Right ∷ Prism' (Either a b) b"
       ]
 
 slide10 :: forall eff props. T.Spec eff SharedState props SlidesAction
@@ -367,7 +366,7 @@ slide12 = intro <> counters <> outro
     intro = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
       [ RD.h1'  [ RD.text "Many Counters" ]
       , RD.p'   [ RD.text "Our component becomes:" ]
-      , RD.pre' [ RD.code' [ RD.text "foreach \\_ -> counter" ] ]
+      , RD.pre' [ RD.code' [ RD.text "foreach \\_ → counter" ] ]
       ]
 
     counters = T.focus counterList incrementN (T.foreach \_ -> counter)
@@ -391,7 +390,7 @@ slide13 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
                                     , RD.td' [ RD.code' [ RD.text "focus" ] ]
                                     , RD.td' [ RD.text "Lens" ]
                                     ]
-                           , RD.tr' [ RD.td' [ RD.text "Lists" ]
+                           , RD.tr' [ RD.td' [ RD.text "List" ]
                                     , RD.td' [ RD.code' [ RD.text "foreach" ] ]
                                     , RD.td' [ RD.text "Traversal" ]
                                     ]
@@ -402,213 +401,324 @@ slide13 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
 slide14 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide14 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
   [ RD.h1'  [ RD.text "A Brief History of the API" ]
-  , RD.ul'  [ RD.li' [ RD.text "v0.1: Elm Architecture + React" ]
-            , RD.li' [ RD.text "v???: Monadic Actions" ]
-            , RD.li' [ RD.text "v???: OpticUI" ]
+  , RD.ul'  [ RD.li' [ RD.text "v0.1: Elm arch + React" ]
+            , RD.li' [ RD.text "v0.3: Monadic actions" ]
+            , RD.li' [ RD.text "..." ]
+            , RD.li' [ RD.text "v0.10: Use purescript-react" ]
             ]
   ]
 
 slide15 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide15 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
   [ RD.h1'  [ RD.text "OpticUI" ]
-  , RD.p'   [ RD.text "Also React-based, with a lensy API" ]
-  , RD.pre' [ RD.code' [ RD.text "type UI s = (s -> Eff _ Unit) -> s -> HTML" ] ]
+  , RD.pre  [ RP.className "center" ]
+            [ RD.code' [ RD.text "type UI s = s → (s → Eff eff Unit) → Eff eff HTML" ] ]
+  , RD.ul'  [ RD.li' [ RD.text "Also React-based, with a lensy API" ]
+            , RD.li' [ RD.text "See "
+                     , RD.code' [ RD.text "zrho/purescript-opticui" ]
+                     ]
+            ]
   ]
 
 slide16 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide16 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Profunctor Lenses" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "OpticUI" ]
+  , RD.pre  [ RP.className "center" ]
+            [ RD.code' [ RD.text "type UI s = s → (s → Eff eff Unit) → Eff eff HTML" ] ]
+  , RD.p'   [ RD.text "Not a "
+            , RD.code' [ RD.text "Functor" ]
+            , RD.text " or a "
+            , RD.code' [ RD.text "Monad" ]
+            ]
   ]
 
 slide17 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide17 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
-  ]
+    [ RD.h1'  [ RD.text "OpticUI" ]
+    , RD.pre  [ RP.className "center" ]
+              [ RD.code' [ RD.text "type UI' s t = s → (t → Eff eff Unit) → Eff eff HTML" ] ]
+    , RD.p'  [ RD.code' [ RD.text "UI'" ]
+             , RD.text " is a "
+             , RD.code' [ RD.text "Profunctor" ]
+             ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "class Profunctor p where"
+      , "  dimap ∷ (c → a) → (b → d) → p a b → p c d"
+      ]
 
 slide18 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide18 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
-  ]
+    [ RD.h1'  [ RD.text "OpticUI" ]
+    , RD.pre  [ RP.className "center" ]
+              [ RD.code' [ RD.text "type UI' s t = s → (t → Eff eff Unit) → Eff eff HTML" ] ]
+    , RD.p'   [ RD.text "In fact it is a "
+              , RD.code' [ RD.text "Strong" ]
+              , RD.text " profunctor"
+              ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "class Strong p where"
+      , "  strength ∷ p a b → p (Tuple a c) (Tuple b c)"
+      ]
 
 slide19 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide19 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "Pure Profunctor Lenses" ]
+  , RD.p    [ RP.className "center" ]
+            [ RD.img [ RP.src "images/profunctor-lenses.png" ] [] ]
   ]
 
 slide20 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide20 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "Pure Profunctor Lenses" ]
+  , RD.p'   [ RD.text "An alternative formulation of lenses" ]
+  , RD.pre' [ RD.code' [ RD.text "type Lens a b = ∀ p. Strong p ⇒ p b b -> p a a" ] ]
+  , RD.p'   [ RD.text "See "
+            , RD.code' [ RD.text "purescript-profunctor-lenses" ]
+            ]
   ]
 
 slide21 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide21 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "Pure Profunctor Lenses" ]
+  , RD.p'   [ RD.text "In other words, we have:" ]
+  , RD.pre' [ RD.code' [ RD.text "focus ∷ Lens a b → UI' b → UI' a" ] ]
+  , RD.p'   [ RD.text "If you have a "
+            , RD.code' [ RD.text "Strong" ]
+            , RD.text " profunctor, you get these operations for free!"
+            ]
   ]
 
 slide22 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide22 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "Other optics" ]
+  , RD.p'   [ RD.text "What optics correspond to operations on components?" ]
+  , RD.table' [ RD.thead' [ RD.th' [ RD.text "Component" ]
+                           , RD.th' [ RD.text "Function" ]
+                           , RD.th' [ RD.text "Optic" ]
+                           ]
+               , RD.tbody' [ RD.tr' [ RD.td' [ RD.text "Pair" ]
+                                    , RD.td' [ RD.code' [ RD.text "focus" ] ]
+                                    , RD.td' [ RD.text "Lens" ]
+                                    ]
+                           , RD.tr' [ RD.td' [ RD.text "List" ]
+                                    , RD.td' [ RD.code' [ RD.text "foreach" ] ]
+                                    , RD.td' [ RD.text "(Indexed) Traversal" ]
+                                    ]
+                           , RD.tr' [ RD.td' [ RD.text "Tabs" ]
+                                    , RD.td' [ RD.code' [ RD.text "split" ] ]
+                                    , RD.td' [ RD.text "Prism" ]
+                                    ]
+                           , RD.tr' [ RD.td' [ RD.text "Cards" ]
+                                    , RD.td' [ RD.code' [ RD.text "?" ] ]
+                                    , RD.td' [ RD.text "Grate" ]
+                                    ]
+                           ]
+               ]
   ]
 
 slide23 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide23 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+  [ RD.h1'  [ RD.text "Finding a place for Async/Effects" ]
+  , RD.p'   [ RD.text "Real applications need to deal with (asynchronous) effects:" ]
+  , RD.ul'  [ RD.li' [ RD.text "AJAX" ]
+            , RD.li' [ RD.text "Websockets" ]
+            , RD.li' [ RD.text "Events" ]
+            , RD.li' [ RD.text "etc." ]
+            ]
+  , RD.p'   [ RD.text "These fit into the "
+            , RD.code' [ RD.text "Profunctor" ]
+            , RD.text " model nicely"
+            ]
   ]
 
 slide24 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide24 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
-  ]
+    [ RD.h1'  [ RD.text "Aff" ]
+    , RD.p'   [ RD.text "An asynchronous effect monad" ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "data Aff eff a"
+      , ""
+      , "instance monadAff ∷ Monad (Aff eff)"
+      , ""
+      , "example ∷ Aff _ (Array Result)"
+      , "example = do"
+      , "  res1 <- get \"/request/1\""
+      , "  res2 <- get \"/request/2\""
+      , "  pure [res1, res2]"
+      ]
 
 slide25 :: forall eff props. T.Spec eff SharedState props SlidesAction
 slide25 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
-  [ RD.h1'  [ RD.text "Blah" ]
-  , RD.p'   [ RD.text "blah" ]
-  , RD.pre' [ RD.code' [ RD.text "blah" ] ]
+    [ RD.h1'  [ RD.text "Coroutines" ]
+    , RD.p'   [ RD.text "We want to support multiple incremental return values" ]
+    , RD.pre' [ RD.code' [ RD.text example ] ]
+    ]
+  where
+    example = joinWith "\n"
+      [ "data Producer o m a"
+      , ""
+      , "emit ∷ ∀ o m. o → Producer o m Unit"
+      , ""
+      , "instance monadProducer ∷ Monad m ⇒ Monad (Producer o m)"
+      , ""
+      , "example ∷ Producer Result (Aff _) Unit"
+      , "example = do"
+      , "  res1 <- liftAff $ get \"/request/1\""
+      , "  emit res1"
+      , "  res2 <- liftAff $ get \"/request/2\""
+      , "  emit res2"
+      ]
+
+slide26 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide26 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Taxonomy of Coroutines" ]
+  , RD.table' [ RD.thead' [ RD.th' [ RD.text "Coroutine" ]
+                          , RD.th' [ RD.text "Function" ]
+                          , RD.th' [ RD.text "Example" ]
+                          ]
+              , RD.tbody' [ RD.tr' [ RD.td' [ RD.text "Process" ]
+                                   , RD.td' [ RD.code' [ RD.text "yield ∷ Process m Unit" ] ]
+                                   , RD.td' [ RD.text "" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Producer o" ]
+                                   , RD.td' [ RD.code' [ RD.text "emit ∷ o → Producer o m Unit" ] ]
+                                   , RD.td' [ RD.text "File Upload" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Consumer i" ]
+                                   , RD.td' [ RD.code' [ RD.text "await ∷ Consumer i m i" ] ]
+                                   , RD.td' [ RD.text "File Download" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Transformer i o" ]
+                                   , RD.td' [ RD.code' [ RD.text "transform ∷ (i → o) → Transformer i o m Unit" ] ]
+                                   , RD.td' [ RD.text "Websocket" ]
+                                   ]
+                          ]
+              ]
   ]
 
--- slide13 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide13 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Task List Example" ]
---   , RD.p'  [ RD.text "Putting it all together" ]
---   , RD.p'  [ RD.a [ RP.href "http://functorial.com/purescript-thermite-todomvc/"
---                    , RP.target "_blank"
---                    ]
---                    [ RD.text "Demo" ]
---             ]
---   , RD.p'  [ RD.a [ RP.href "https://github.com/paf31/purescript-thermite/blob/master/test"
---                    , RP.target "_blank"
---                    ]
---                    [ RD.text "Code" ]
---             ]
---   ]
---
--- slide14 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide14 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Async" ]
---   , RD.p'  [ RD.text "Or \"What's this cotransform thing about?\"" ]
---   ]
---
--- slide15 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide15 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Coroutines" ]
---   , RD.p'  [ RD.text "The purescript-coroutines library defines the Coroutine abstraction, which generalizes" ]
---   , RD.ul'  [ RD.li' [ RD.text "Data producers" ]
---              , RD.li' [ RD.text "Data consumers" ]
---              , RD.li' [ RD.text "Data transformers" ]
---              ]
---   , RD.p'  [ RD.text "over some base monad (usually Aff)" ]
---   , RD.p'  [ RD.text "This is a good model for various asynchronous processes:" ]
---   , RD.ul'  [ RD.li' [ RD.text "AJAX" ]
---              , RD.li' [ RD.text "Websockets" ]
---              , RD.li' [ RD.text "Node streams" ]
---              ]
---   ]
---
--- slide16 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide16 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---     [ RD.h1' [ RD.text "Producers and Consumers" ]
---     , RD.p'  [ RD.text "Coroutines are free monad transformers" ]
---     , RD.pre' [ RD.code' [ RD.text example ] ]
---     ]
---   where
---     example = """type Co f m = FreeT f m
---
--- data Emit o a = Emit o a
--- type Producer o = Co (Emit o)
---
--- newtype Await i a = Await (i -> a)
--- type Consumer i = Co (Await i)"""
---
--- slide17 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide17 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---     [ RD.h1' [ RD.text "Transformers" ]
---     , RD.p'  [ RD.text "Transformers take one input and return one output" ]
---     , RD.pre' [ RD.code' [ RD.text example ] ]
---     ]
---   where
---     example = """newtype Transform i o a = Transform (i -> Tuple o a)
--- type Transformer i o = Co (Transform i o)
---
--- data CoTransform i o a = CoTransform o (i -> a)
--- type CoTransformer i o = Co (CoTransform i o)
---
--- cotransform
---   ∷ ∀ m i o
---   . Monad m
---   ⇒ o
---   → CoTransformer i o m i"""
---
--- slide18 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide18 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1'  [ RD.text "React as a Transformer" ]
---   , RD.p'   [ RD.text "React yields the current state and waits for state update (asynchronously!)" ]
---   , RD.pre' [ RD.code' [ RD.text "react :: CoTransformer (σ -> σ) (Maybe σ) (Aff eff) Unit" ] ]
---   , RD.p'   [ RD.text "We can fuse this with our update coroutine:" ]
---   , RD.pre' [ RD.code' [ RD.text "CoTransformer (Maybe σ) (σ → σ) (Aff eff) Unit" ] ]
---   ]
---
--- slide19 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide19 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Try Thermite" ]
---   , RD.p'  [ RD.text "Try Thermite in the browser and see results immediately:" ]
---   , RD.p'  [ RD.a [ RP.href "http://paf31.github.io/try-thermite/"
---                   , RP.target "_blank"
---                   ]
---                   [ RD.text "Try it now" ]
---            ]
---   ]
---
--- slide20 :: forall eff props. T.Spec eff SharedState props SlidesAction
--- slide20 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
---   [ RD.h1' [ RD.text "Questions?" ] ]
+slide27 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide27 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Coroutine Fusion" ]
+  , RD.p'   [ RD.text "We can fuse Coroutines in many ways:" ]
+  , RD.table' [ RD.thead' [ RD.th' [ RD.text "A" ]
+                          , RD.th' [ RD.text "B" ]
+                          , RD.th' [ RD.text "Result" ]
+                          ]
+              , RD.tbody' [ RD.tr' [ RD.td' [ RD.text "Producer a" ]
+                                   , RD.td' [ RD.text "Producer b" ]
+                                   , RD.td' [ RD.text "Producer (Tuple a b)" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Consumer a" ]
+                                   , RD.td' [ RD.text "Consumer b" ]
+                                   , RD.td' [ RD.text "Consumer (Tuple a b)" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Producer a" ]
+                                   , RD.td' [ RD.text "Consumer a" ]
+                                   , RD.td' [ RD.text "Process" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Producer a" ]
+                                   , RD.td' [ RD.text "Transformer a b" ]
+                                   , RD.td' [ RD.text "Producer b" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Consumer b" ]
+                                   , RD.td' [ RD.text "Transformer a b" ]
+                                   , RD.td' [ RD.text "Consumer a" ]
+                                   ]
+                          , RD.tr' [ RD.td' [ RD.text "Transformer a b" ]
+                                   , RD.td' [ RD.text "Transformer b c" ]
+                                   , RD.td' [ RD.text "Transformer a c" ]
+                                   ]
+                          ]
+              ]
+  ]
+
+slide28 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide28 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "React is a Coroutine" ]
+  , RD.p'   [ RD.text "We can model React's internal state as:" ]
+  , RD.pre' [ RD.code' [ RD.text "react ∷ Consumer (state → state) (Aff _) Unit" ] ]
+  , RD.p'   [ RD.text "If we can model our application as" ]
+  , RD.pre' [ RD.code' [ RD.text "app ∷ Producer (state → state) (Aff _) Unit" ] ]
+  , RD.p'   [ RD.text "then we can use fusion to run it" ]
+  ]
+
+slide29 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide29 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Main Idea" ]
+  , RD.p'   [ RD.text "The "
+            , RD.code' [ RD.text "UI" ]
+            , RD.text " type can now become"
+            ]
+  , RD.pre' [ RD.code' [ RD.text "type UI'' s t = s → Consumer (s → t) (Aff eff) Unit → Eff eff HTML" ] ]
+  , RD.p'   [ RD.text "Since this is still "
+            , RD.code' [ RD.text "Strong" ]
+            , RD.text ", we can continue using the "
+            , RD.code' [ RD.text "Lens" ]
+            , RD.text " operations!"
+            ]
+  ]
+
+slide30 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide30 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Conclusion" ]
+  , RD.p'   [ RD.text "(Strong) profunctors are a very useful abstraction and design tool!" ]
+  ]
+
+slide31 :: forall eff props. T.Spec eff SharedState props SlidesAction
+slide31 = T.simpleSpec T.defaultPerformAction \dispatch _ state _ ->
+  [ RD.h1'  [ RD.text "Links, questions?" ]
+  , RD.ul'  [ RD.li' [ RD.text "paf31/purescript-thermite" ]
+            , RD.li' [ RD.text "paf31.github.io/try-thermite" ]
+            , RD.li' [ RD.text "purescript-contrib/purescript-profunctor-lenses" ]
+            , RD.li' [ RD.text "zrho/purescript-opticui" ]
+            , RD.li' [ RD.text "paf31/codemesh2016" ]
+            ]
+  ]
 
 slidesComponent :: forall props eff. T.Spec eff SlidesState props SlidesAction
 slidesComponent = fold
-    [ slide 0 slide0
-    , slide 1 slide1
-    , slide 2 slide2
-    , slide 3 slide3
-    , slide 4 slide4
-    , slide 5 slide5
-    , slide 6 slide6
-    , slide 7 slide7
-    , slide 8 slide8
-    , slide 9 slide9
-    , slide 10 slide10
-    , slide 11 slide11
-    , slide 12 slide12
-    , slide 13 slide13
-    , slide 14 slide14
-    , slide 15 slide15
-    , slide 16 slide16
-    , slide 17 slide17
-    , slide 18 slide18
-    , slide 19 slide19
-    , slide 20 slide20
-    , slide 21 slide21
-    , slide 22 slide22
-    , slide 23 slide23
-    , slide 24 slide24
-    , slide 25 slide25
+    [ slide 0  slide0
+    , slide 1  hello
+    , slide 2  slide1
+    , slide 3  slide2
+    , slide 4  slide3
+    , slide 5  slide4
+    , slide 6  slide5
+    , slide 7  slide6
+    , slide 8  slide7
+    , slide 9  slide8
+    , slide 10  slide9
+    , slide 11 slide10
+    , slide 12 slide11
+    , slide 13 slide12
+    , slide 14 slide13
+    , slide 15 slide14
+    , slide 16 slide15
+    , slide 17 slide16
+    , slide 18 slide17
+    , slide 19 slide18
+    , slide 20 slide19
+    , slide 21 slide20
+    , slide 22 slide21
+    , slide 23 slide22
+    , slide 24 slide23
+    , slide 25 slide24
+    , slide 26 slide25
+    , slide 27 slide26
+    , slide 28 slide27
+    , slide 29 slide28
+    , slide 30 slide29
+    , slide 31 slide30
+    , slide 32 slide31
     ]
   where
     slide n = T.split (slideNumberIs n)
