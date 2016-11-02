@@ -1,0 +1,16 @@
+{
+  "name": "sandbox",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-tailrec": "^2.0.0",
+    "purescript-lists": "^3.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^2.0.0"
+  }
+}

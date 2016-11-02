@@ -56,9 +56,13 @@ Just ()
 
 # Motivation
 
-But how would we write this function in a strict language?
+But how would we write this function in a strict language like _PureScript_?
 
-(PureScript, Scala, etc.)
+**PureScript**
+
+- a strict Haskell-like language compiling to JS
+- features type classes, HKP
+- see purescript.org 
 
 ---
 
@@ -86,7 +90,22 @@ RangeError: Maximum call stack size exceeded
 
 # Tail Recursion
 
-We need to avoid allocating a stack frame for each iteration:
+**Recap**:
+
+A tail recursive function can either
+
+- return a value
+- or loop, modifying some function arguments
+
+at each step.
+
+The compiler can turn such a function into a *loop*.
+
+---
+
+# Tail Recursion
+
+For example:
 
 
 ```haskell
@@ -101,14 +120,14 @@ replicateM_ n x = loop (pure unit) n where
 
 # Tail Recursion
 
-This works for some monads:
+This works for some monads, like `Maybe`:
 
 ```text
 > replicateM_ 1000000 (Just 42)
 Just unit
 ```
 
-but continues to fail for others:
+but still fails for others, like `Eff`:
 
 ```text
 > replicateM_ 1000000 (log "testing")
@@ -119,20 +138,12 @@ RangeError: Maximum call stack size exceeded
 
 # Tail Recursion
 
-**Recap**:
+> A tail recursive function can either
+> 
+> - return a value
+> - or loop, modifying some function arguments
 
-A tail recursive function can either
-
-- return a value
-- or loop, modifying some function arguments
-
-at each step
-
----
-
-# Tail Recursion
-
-Well, let's reify those constraints as a data structure:
+Now let's reify those constraints as a data structure:
 
 ```haskell
 data Step a b 
@@ -154,7 +165,7 @@ This can be used to write variants with multiple arguments:
 
 ```haskell
 tailRec2 :: ∀ a b c
-          . (a -> b -> Step (a, b) c) 
+          . (a -> b -> Step { fst :: a, snd :: b } c) 
          -> a -> b -> c
 ```
 
@@ -167,9 +178,11 @@ This is enough to reimplement `replicateM_`:
 ```haskell
 replicateM_ :: ∀ m a. Monad m => Int -> m a -> m Unit
 replicateM_ n x = tailRec2 loop (pure unit) n where
-  loop :: m Unit -> Int -> Step (m Unit, Int) (m Unit)
+  loop :: m Unit 
+       -> Int 
+       -> Step { fst :: m Unit, snd :: Int } (m Unit)
   loop acc 0 = Done acc
-  loop acc n = Loop (x *> acc, n - 1)
+  loop acc n = Loop { fst: x *> acc, snd: n - 1 }
 ```
 
 Of course, this doesn't solve the problem, yet
@@ -187,7 +200,7 @@ The trick:
 Generalize `tailRec` to _monadic tail recursion_ using a new type class
 
 ```haskell
-class Monad m => MonadRec m where
+class Monad m <= MonadRec m where
   tailRecM :: (a -> m (Step a b)) -> a -> m b
 ```
 
@@ -199,7 +212,7 @@ What should the laws be?
 
 `tailRecM` should be equivalent to the default definition:
 
-```
+```haskell
 tailRecM f a =
   step <- f a
   case step of
@@ -281,17 +294,46 @@ We can also implement other functions like `mapM` and `foldM`.
 
 # Free Monads
 
-The free monad:
+The free monad for a functor `f`
 
 ```haskell
-data Free f a = Pure a | Impure (f (Free f a))
+data Free f a
+  = Pure a
+  | Impure (f (Free f a))
+  
+instance monadFree :: Functor f => Monad (Free f)
+
+liftFree :: ∀ f a. Functor f => f a -> Free f a
+liftFree fa = Impure (fmap Pure fa)
 ```
 
-has a similar problem in strict languages.
+represents sequences of instructions defined by `f`. 
 
 ---
 
 # Free Monads
+
+**Example:**
+
+```haskell
+data DatabaseF a
+  = Insert Key Value a
+  | Select Key (Maybe Value -> a)
+  
+type Database = Free DatabaseF
+
+insert :: Key -> Value -> Database Unit
+insert k v = liftFree (Insert k v unit)
+
+select :: Key -> Database (Maybe Value)
+select k = liftFree (Select k id)
+```
+
+---
+
+# Free Monads
+
+**Interpretation:**
 
 ```haskell
 runFree :: ∀ m f a
@@ -305,7 +347,37 @@ runFree f (Impure xs) = do
   runFree f next
 ```
 
-We cannot interpret deep computations without risking blowing the stack. 
+---
+
+# Free Monads
+
+**Testing**
+
+```haskell
+type Test = State (Map Key Value)
+
+
+testDB :: ∀ a. Database a -> Test a
+testDB = runFree go where
+  go :: DatabaseF (Database a) -> Test (Database a)
+  go (Insert k v next) = do
+    modify (insert k v)
+    next
+  go (Select k next) = do
+    v <- gets (lookup k)
+    next v
+```
+
+---
+
+
+# Free Monads
+
+**Problem:**
+
+`runFree` uses monadic recursion.
+
+We cannot interpret deep or infinite computations without the risk of blowing the stack. 
 
 ---
 
@@ -347,7 +419,7 @@ interleaves effects from the base monad `m`.
 
 # Free Monad Transformers
 
-The technique extends to the free monad transformer:
+The previous technique extends to the free monad transformer:
 
 ```haskell
 runFreeT :: ∀ m f a
@@ -356,6 +428,8 @@ runFreeT :: ∀ m f a
          -> FreeT f m a
          -> m a
 ```
+
+(see the paper)
 
 ---
 
@@ -371,6 +445,12 @@ In particular, we can write an instance for
 
 ```haskell
 type SafeT = FreeT Identity
+```
+
+which is isomorphic to
+
+```haskell
+data SafeT m a = SafeT (m (Either a (SafeT m a))
 ```
 
 ---
@@ -400,12 +480,12 @@ If we are feeling lazy, we can just use the original implementation!
 
 ```haskell
 replicateM_ :: ∀ m a. MonadRec m => Int -> m a -> m Unit
-replicateM_ = (lower <<<) <<< go where
+replicateM_ n x = lower (go n x) where
   go 0 _ = pure unit
   go n x = lift x *> replicateM_ (n - 1) x
 ```
 
-`SafeT` also has induced instances for several `mtl` classes.
+_Note_: `SafeT` also has induced instances for several `mtl` classes.
 
 --- 
 
@@ -415,7 +495,7 @@ replicateM_ = (lower <<<) <<< go where
 
 # Coroutines
 
-The free monad transformer gives a nice model for coroutines.
+The free monad transformer gives a nice (safe!) model for coroutines over some base monad.
 
 For example:
 
@@ -447,14 +527,14 @@ E.g. chunked handling of HTTP responses
 
 # Coroutines
 
+**Fusion**
+
 ```haskell
 type Fuse f g h = ∀ a b c
                 . (a -> b -> c) 
                -> f a
                -> g b
                -> h c
-
-producerConsumer :: Fuse (Emit o) (Await o) Identity
 
 fuse :: ∀ f g h m a
       . (Functor f, Functor g, Functor h, MonadRec m)
@@ -468,11 +548,28 @@ fuse :: ∀ f g h m a
 
 # Coroutines
 
-**Examples:**
+**Producer - Producer**
+
+`Fuse (Emit o1) (Emit o2) (Emit (Tuple o1 o2))`
+
+**Consumer - Consumer**
+
+`Fuse (Await i1) (Await i2) (Await (Tuple i1 i2))`
+
+**Producer - Consumer**
+
+`Fuse (Emit o) (Await o) Identity`
+
+---
+
+# Coroutines
+
+**Applications:**
 
 - Websockets
 - File I/O
 - AJAX
+- Cooperative multitasking
 
 ---
 
@@ -485,6 +582,8 @@ fuse :: ∀ f g h m a
 - `MonadRec` can make a variety of tasks safe in a strict language like PureScript
 - We trade off some instances for a safe implementation
 - `MonadRec` has been implemented in PureScript, Scalaz, cats and fantasy-land.
+- Check out the paper:
+    functorial.com/stack-safety-for-free/index.pdf
 
 ---
 
