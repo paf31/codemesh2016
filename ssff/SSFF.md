@@ -82,6 +82,8 @@ This fails quickly with
 RangeError: Maximum call stack size exceeded
 ```
 
+(demo)
+
 ---
 
 # Tail Recursion
@@ -431,65 +433,9 @@ runFreeT :: ∀ m f a
 
 (see the paper)
 
----
-
-# 3. Stack Safety for Free
-
----
-
-# Stack Safety for Free
-
-We can write a `MonadRec` instance for `FreeT f m` whenever `m` itself has `MonadRec`.
-
-In particular, we can write an instance for
-
-```haskell
-type SafeT = FreeT Identity
-```
-
-which is isomorphic to
-
-```haskell
-data SafeT m a = SafeT (m (Either a (SafeT m a))
-```
-
----
-
-# Stack Safety for Free
-
-`SafeT` is a monad transformer:
-
-```haskell
-lift :: ∀ m a. m a -> SafeT m a
-```
-
-but we can also lower values:
-
-```haskell
-lower :: ∀ f a. MonadRec m => SafeT m a -> m a
-lower = runFreeT (pure <<< runIdentity)
-```
-
-This gives a way to evaluate arbitrarily-nested monadic binds safely for any `MonadRec`!
-
----
-
-# Stack Safety for Free
-
-If we are feeling lazy, we can just use the original implementation!
-
-```haskell
-replicateM_ :: ∀ m a. MonadRec m => Int -> m a -> m Unit
-replicateM_ n x = lower (go n x) where
-  go 0 _ = pure unit
-  go n x = lift x *> replicateM_ (n - 1) x
-```
-
-_Note_: `SafeT` also has induced instances for several `mtl` classes.
-
 --- 
 
-# 4. Coroutines
+# 3. Coroutines
 
 ---
 
@@ -570,6 +516,8 @@ fuse :: ∀ f g h m a
 - File I/O
 - AJAX
 - Cooperative multitasking
+
+(Demo)
 
 ---
 
